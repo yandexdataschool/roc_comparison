@@ -1,12 +1,6 @@
-import argparse
 import pandas as pd
 import numpy as np
 import scipy.stats
-import json
-import matplotlib
-matplotlib.use('pdf')
-import matplotlib.pyplot as plt
-import matplotlib.ticker as plticker
 
 # AUC comparison adapted from
 # https://github.com/Netflix/vmaf/
@@ -143,81 +137,3 @@ def stratified_sampling_mask(array, sample_fraction):
         this_selection = np.random.choice(count, size=int(count*sample_fraction), replace=False)
         selected[indices[this_selection]] = True
     return selected
-
-
-# Given the main body is a one-time script, lots of things are hardcoded
-# If you need flexibility, please use the functions above
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--one-class-results", type=str,
-                        help="tsv with first column being the 1 vs all"
-                        " predictions", required=True)
-    parser.add_argument("--multiclass-baselines", type=str,
-                        help="csv with header", required=True)
-    parser.add_argument('--ttest-method', choices=['one-tailed',
-                                                   'two-tailed'], default='one-tailed')
-    parser.add_argument("--output", type=str, required=True)
-    parser.add_argument("--tabulate-by-sample-size", action="store_true")
-    parser.add_argument("--by-sample-size-plot", type=str)
-    parser.add_argument("--classes-count", type=int, required=True)
-    parser.add_argument("--baselines-count", type=int, required=True)
-    parser.add_argument("--target-class", type=int, required=True)
-    args = parser.parse_args()
-    np.set_printoptions(precision=20)
-    one_class_predictions = pd.read_csv(args.one_class_results,
-                                        sep='\t', header=None,
-                                        names=["predictions", "true_label"])
-    baseline_columns = np.arange(args.baselines_count)*args.classes_count + args.target_class
-    baselines = pd.read_csv(args.multiclass_baselines, usecols=baseline_columns)
-
-    if args.tabulate_by_sample_size:
-        trials = 15
-        results = {}
-        for baseline_name, baseline_predictions in baselines.iteritems():
-            sample_sizes = []
-            pvalues = []
-            pvalue_stds = []
-            for sample_fraction in np.logspace(start=-4, stop=0, endpoint=True, num=10):
-                sample_pvalues = []
-                for trial in range(trials if sample_fraction < 1 else 1):
-                    sample_mask = stratified_sampling_mask(
-                        one_class_predictions["true_label"].values, sample_fraction)
-                    sample_pvalues.append(delong_roc_test(
-                        one_class_predictions["true_label"].values[sample_mask],
-                        one_class_predictions["predictions"].values[sample_mask],
-                        baseline_predictions.values[sample_mask]))
-                sample_sizes.append(int(sample_mask.sum()))
-                pvalues.append(float(np.mean(sample_pvalues)))
-                pvalue_stds.append(float(np.std(sample_pvalues)))
-            results[baseline_name] = {
-                "sample_sizes": sample_sizes,
-                "pvalues": pvalues,
-                "std(pvalues)": pvalue_stds}
-        if args.by_sample_size_plot:
-            fig, ax = plt.subplots()
-            for baseline_name, result in results.items():
-                ax.plot(result["sample_sizes"], result["pvalues"], label=baseline_name)
-            ax.legend(loc=3)
-            ax.set_xscale("log")
-            ax.set_xlabel("Sample size")
-            ax.set_ylabel("log10(p-value)")
-            ax.set_ylim((-20, 1))
-            loc = plticker.MultipleLocator(base=1)
-            ax.yaxis.set_minor_locator(loc)
-            major_loc = plticker.MultipleLocator(base=5)
-            ax.yaxis.set_major_locator(major_loc)
-            ax.grid()
-            with open(args.by_sample_size_plot, "wb") as plot_io:
-                fig.savefig(plot_io, bbox="tight", filetype="pdf")
-    else:
-        result = {}
-        for baseline_name, baseline_predictions in baselines.iteritems():
-            result[baseline_name] = delong_roc_test(
-                one_class_predictions["true_label"].values,
-                one_class_predictions["predictions"].values,
-                baseline_predictions.values)
-    with open(args.output, "w") as out_io:
-        json.dump(results, out_io)
-
-if __name__ == "__main__":
-    main()
