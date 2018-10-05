@@ -101,8 +101,8 @@ def fastDeLong_weights(predictions_sorted_transposed, label_1_count, sample_weig
     pair_weights = np.dot(sample_weight[:m, np.newaxis], sample_weight[np.newaxis, m:])
     total_pair_weights = pair_weights.sum()
     aucs = (sample_weight[:m]*(tz[:, :m] - tx)).sum(axis=1) / total_pair_weights
-    v01 = (tz[:, :m] - tx[:, :]) / total_negative_weights
-    v10 = 1.0 - (tz[:, m:] - ty[:, :]) / total_positive_weights
+    v01 = sample_weight[:m]*(tz[:, :m] - tx[:, :]) / total_negative_weights
+    v10 = 1.0 - sample_weight[m:]*(tz[:, m:] - ty[:, :]) / total_positive_weights
     sx = np.cov(v01)
     sy = np.cov(v10)
     delongcov = sx / total_positive_weights + sy / total_negative_weights
