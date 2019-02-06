@@ -98,8 +98,7 @@ def fastDeLong_weights(predictions_sorted_transposed, label_1_count, sample_weig
         tz[r, :] = compute_midrank_weight(predictions_sorted_transposed[r, :], sample_weight)
     total_positive_weights = sample_weight[:m].sum()
     total_negative_weights = sample_weight[m:].sum()
-    pair_weights = np.dot(sample_weight[:m, np.newaxis], sample_weight[np.newaxis, m:])
-    total_pair_weights = pair_weights.sum()
+    total_pair_weights = (sample_weight[:m] * total_negative_weights).sum()
     aucs = (sample_weight[:m]*(tz[:, :m] - tx)).sum(axis=1) / total_pair_weights
     v01 = (tz[:, :m] - tx[:, :]) / total_negative_weights
     v10 = 1. - (tz[:, m:] - ty[:, :]) / total_positive_weights
