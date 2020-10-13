@@ -65,7 +65,7 @@ def fastDeLong(predictions_sorted_transposed, label_1_count):
     Reference:
      @article{sun2014fast,
        title={Fast Implementation of DeLong's Algorithm for
-              Comparing the Areas Under Correlated Receiver Oerating Characteristic Curves},
+              Comparing the Areas Under Correlated Receiver Operating Characteristic Curves},
        author={Xu Sun and Weichao Xu},
        journal={IEEE Signal Processing Letters},
        volume={21},
