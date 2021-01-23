@@ -3,14 +3,13 @@ import sklearn.model_selection
 import sklearn.linear_model    
 import numpy
 import compare_auc_delong_xu
-import unittest
 import scipy.stats
 
 x_distr = scipy.stats.norm(0.5, 1)
 y_distr = scipy.stats.norm(-0.5, 1)
 sample_size_x = 7
 sample_size_y = 14
-n_trials = 1000000
+n_trials = 1000
 aucs = numpy.empty(n_trials)
 variances = numpy.empty(n_trials)
 numpy.random.seed(1234235)
@@ -23,4 +22,5 @@ for trial in range(n_trials):
     auc_delong, variances[trial] = compare_auc_delong_xu.delong_roc_variance(
         labels, scores)
 
-print(variances.mean(), aucs.var())
+print(f"Experimental variance {variances.mean():.4f}, "
+      f"computed vairance {aucs.var():.4f}, {n_trials} trials")
