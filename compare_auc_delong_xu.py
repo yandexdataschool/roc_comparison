@@ -150,7 +150,7 @@ def delong_roc_test(ground_truth, predictions_one, predictions_two):
           np.array of floats of the probability of being class 1
     """
     sample_weight = None
-    order, label_1_count = compute_ground_truth_statistics(ground_truth)
+    order, label_1_count, ordered_sample_weight = compute_ground_truth_statistics(ground_truth)
     predictions_sorted_transposed = np.vstack((predictions_one, predictions_two))[:, order]
     aucs, delongcov = fastDeLong(predictions_sorted_transposed, label_1_count)
     return calc_pvalue(aucs, delongcov)
