@@ -29,30 +29,6 @@ def compute_midrank(x):
     return T2
 
 
-def compute_midrank_weight(x, sample_weight):
-    """Computes midranks.
-    Args:
-       x - a 1D numpy array
-    Returns:
-       array of midranks
-    """
-    J = np.argsort(x)
-    Z = x[J]
-    cumulative_weight = np.cumsum(sample_weight[J])
-    N = len(x)
-    T = np.zeros(N, dtype=np.float)
-    i = 0
-    while i < N:
-        j = i
-        while j < N and Z[j] == Z[i]:
-            j += 1
-        T[i:j] = cumulative_weight[i:j].mean()
-        i = j
-    T2 = np.empty(N, dtype=np.float)
-    T2[J] = T
-    return T2
-
-
 def fastDeLong(predictions_sorted_transposed, label_1_count):
     """
     The fast version of DeLong's method for computing the covariance of
@@ -111,16 +87,11 @@ def calc_pvalue(aucs, sigma):
     return np.log10(2) + scipy.stats.norm.logsf(z, loc=0, scale=1) / np.log(10)
 
 
-def compute_ground_truth_statistics(ground_truth, sample_weight=None):
+def compute_ground_truth_statistics(ground_truth):
     assert np.array_equal(np.unique(ground_truth), [0, 1])
     order = (-ground_truth).argsort()
     label_1_count = int(ground_truth.sum())
-    if sample_weight is None:
-        ordered_sample_weight = None
-    else:
-        ordered_sample_weight = sample_weight[order]
-
-    return order, label_1_count, ordered_sample_weight
+    return order, label_1_count
 
 
 def delong_roc_variance(ground_truth, predictions):
@@ -130,11 +101,9 @@ def delong_roc_variance(ground_truth, predictions):
        ground_truth: np.array of 0 and 1
        predictions: np.array of floats of the probability of being class 1
     """
-    sample_weight = None
-    order, label_1_count, ordered_sample_weight = compute_ground_truth_statistics(
-        ground_truth, sample_weight)
+    order, label_1_count = compute_ground_truth_statistics(ground_truth)
     predictions_sorted_transposed = predictions[np.newaxis, order]
-    aucs, delongcov = fastDeLong(predictions_sorted_transposed, label_1_count, ordered_sample_weight)
+    aucs, delongcov = fastDeLong(predictions_sorted_transposed, label_1_count)
     assert len(aucs) == 1, "There is a bug in the code, please forward this to the developers"
     return aucs[0], delongcov
 
@@ -149,8 +118,7 @@ def delong_roc_test(ground_truth, predictions_one, predictions_two):
        predictions_two: predictions of the second model,
           np.array of floats of the probability of being class 1
     """
-    sample_weight = None
-    order, label_1_count, ordered_sample_weight = compute_ground_truth_statistics(ground_truth)
+    order, label_1_count = compute_ground_truth_statistics(ground_truth)
     predictions_sorted_transposed = np.vstack((predictions_one, predictions_two))[:, order]
     aucs, delongcov = fastDeLong(predictions_sorted_transposed, label_1_count)
     return calc_pvalue(aucs, delongcov)
