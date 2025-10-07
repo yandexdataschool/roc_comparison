@@ -75,16 +75,16 @@ def fastDeLong(predictions_sorted_transposed, label_1_count):
 
 
 def calc_pvalue(aucs, sigma):
-    """Computes log(10) of p-values.
+    """Computes p-values.
     Args:
        aucs: 1D array of AUCs
        sigma: AUC DeLong covariances
     Returns:
-       log10(pvalue)
+       pvalue
     """
     l = np.array([[1, -1]])
     z = np.abs(np.diff(aucs)) / np.sqrt(np.dot(np.dot(l, sigma), l.T))
-    return np.log10(2) + scipy.stats.norm.logsf(z, loc=0, scale=1) / np.log(10)
+    return 2 * scipy.stats.norm.sf(z, loc=0, scale=1)
 
 
 def compute_ground_truth_statistics(ground_truth):
@@ -110,7 +110,7 @@ def delong_roc_variance(ground_truth, predictions):
 
 def delong_roc_test(ground_truth, predictions_one, predictions_two):
     """
-    Computes log(p-value) for hypothesis that two ROC AUCs are different
+    Computes p-value for hypothesis that two ROC AUCs are different
     Args:
        ground_truth: np.array of 0 and 1
        predictions_one: predictions of the first model,
