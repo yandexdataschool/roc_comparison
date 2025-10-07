@@ -94,31 +94,31 @@ def compute_ground_truth_statistics(ground_truth):
     return order, label_1_count
 
 
-def delong_roc_variance(ground_truth, predictions):
+def delong_roc_variance(ground_truth, scores):
     """
-    Computes ROC AUC variance for a single set of predictions
+    Computes ROC AUC variance for a single set of scores
     Args:
        ground_truth: np.array of 0 and 1
-       predictions: np.array of floats of the probability of being class 1
+       scores: np.array of floats of the scores of being class 1
     """
     order, label_1_count = compute_ground_truth_statistics(ground_truth)
-    predictions_sorted_transposed = predictions[np.newaxis, order]
-    aucs, delongcov = fastDeLong(predictions_sorted_transposed, label_1_count)
+    scores_sorted_transposed = scores[np.newaxis, order]
+    aucs, delongcov = fastDeLong(scores_sorted_transposed, label_1_count)
     assert len(aucs) == 1, "There is a bug in the code, please forward this to the developers"
     return aucs[0], delongcov
 
 
-def delong_roc_test(ground_truth, predictions_one, predictions_two):
+def delong_roc_test(ground_truth, scores_one, scores_two):
     """
     Computes log(p-value) for hypothesis that two ROC AUCs are different
     Args:
        ground_truth: np.array of 0 and 1
-       predictions_one: predictions of the first model,
-          np.array of floats of the probability of being class 1
-       predictions_two: predictions of the second model,
-          np.array of floats of the probability of being class 1
+       scores_one: scores of the first model,
+          np.array of floats of the scores of being class 1
+       scores_two: scores of the second model,
+          np.array of floats of the scores of being class 1
     """
     order, label_1_count = compute_ground_truth_statistics(ground_truth)
-    predictions_sorted_transposed = np.vstack((predictions_one, predictions_two))[:, order]
-    aucs, delongcov = fastDeLong(predictions_sorted_transposed, label_1_count)
+    scores_sorted_transposed = np.vstack((scores_one, scores_two))[:, order]
+    aucs, delongcov = fastDeLong(scores_sorted_transposed, label_1_count)
     return calc_pvalue(aucs, delongcov)
